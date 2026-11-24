@@ -23,7 +23,12 @@
   const key = s => String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const load = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } };
-  const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } };
+  let onPersonalSave = () => { };
+  const save = (k, v) => {
+    try { localStorage.setItem(k, JSON.stringify(v)); } catch { return false; }
+    if (k !== 'hb.db.v1' && k !== 'hb.theme' && k !== 'hb.lang') onPersonalSave();
+    return true;
+  };
   const cap = s => s ? s[0].toUpperCase() + s.slice(1) : s;
   const icon = {
     x: '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>',
@@ -1313,7 +1318,7 @@
   });
   $('#lang-btn').addEventListener('click', () => {
     lang = lang === 'de' ? 'en' : 'de'; save(K.lang, lang);
-    applyStatic(); rebuildIngIndex(); renderGuestBanner();
+    applyStatic(); rebuildIngIndex(); renderGuestBanner(); renderAcct();
     if (!state.editId) $('#form-title').textContent = t('newTitle'); else $('#form-title').textContent = t('editTitle');
     if (dlg.open) openDetail(dlg.dataset.id, true);
     renderCurrent();
@@ -1329,6 +1334,187 @@
     toast(state.af ? t('afOn') : t('afOff'));
     if (dlg.open) openDetail(dlg.dataset.id, true);
     renderCurrent();
+  });
+
+  // ---------- Konto & Sync (Supabase) ----------
+  const CFG = window.HB_CONFIG || {};
+  const cloudOn = !!(CFG.supabaseUrl && CFG.supabaseAnonKey);
+  const cloud = { client: null, user: null, pushT: 0, busy: false, applying: false, last: load('hb.cloud.t', 0), msg: '', mode: 'login', recovery: false };
+  const acctDlg = $('#acct');
+  const mine = () => {
+    const g = state.guest;
+    return {
+      bar: [...(g ? g.realBar : state.bar)], favs: [...(g ? g.realFavs : state.favs)], own: g ? g.realOwn : state.own,
+      shop: state.shop, notes: state.notes, hist: state.hist, low: [...state.low], af: state.af
+    };
+  };
+  function applyData(d) {
+    if (!d || typeof d !== 'object') return;
+    cloud.applying = true;
+    const g = state.guest;
+    if (Array.isArray(d.bar)) { const v = new Set(d.bar.map(String)); if (g) { g.realBar = v; localStorage.setItem(K.bar, JSON.stringify([...v])); } else { state.bar = v; saveBar(); } }
+    if (Array.isArray(d.favs)) { const v = new Set(d.favs.map(String)); if (g) { g.realFavs = v; localStorage.setItem(K.fav, JSON.stringify([...v])); } else { state.favs = v; saveFavs(); } }
+    if (Array.isArray(d.own)) { const v = d.own.filter(o => o && o.id && o.name && Array.isArray(o.ings)); if (g) { g.realOwn = v; localStorage.setItem(K.own, JSON.stringify(v)); } else { state.own = v; saveOwn(); } }
+    if (Array.isArray(d.shop)) { state.shop = d.shop.filter(x => x && x.k); saveShop(); }
+    if (d.notes && typeof d.notes === 'object') { state.notes = d.notes; saveNotes(); }
+    if (Array.isArray(d.hist)) { state.hist = d.hist.filter(h => h && h.id); saveHist(); }
+    if (Array.isArray(d.low)) { state.low = new Set(d.low.map(String)); saveLow(); }
+    if (typeof d.af === 'boolean') { state.af = d.af; save(K.af, state.af); applyAF(); }
+    cloud.applying = false;
+    rebuildIngIndex(); renderCurrent();
+  }
+  // Beim ersten Login auf einem Gerät: lokale Daten mit dem Konto zusammenführen
+  function mergeData(l, r) {
+    const uni = (a = [], b = []) => [...new Set([...(a || []), ...(b || [])])];
+    const byKey = (a = [], b = [], f) => { const m = new Map(); [...(b || []), ...(a || [])].forEach(x => { if (x) m.set(f(x), x); }); return [...m.values()]; };
+    return {
+      bar: uni(r.bar, l.bar), favs: uni(r.favs, l.favs), low: uni(r.low, l.low),
+      own: byKey(l.own, r.own, o => o.id), shop: byKey(l.shop, r.shop, x => x.k),
+      notes: { ...(l.notes || {}), ...(r.notes || {}) },
+      hist: byKey(l.hist, r.hist, h => h.id + '|' + h.t).sort((a, b) => a.t - b.t).slice(-500),
+      af: typeof r.af === 'boolean' ? r.af : l.af
+    };
+  }
+  const isEmpty = d => !d.bar.length && !d.favs.length && !d.own.length && !d.shop.length && !Object.keys(d.notes || {}).length && !d.hist.length;
+  async function cloudPull() {
+    if (!cloud.client || !cloud.user) return;
+    cloud.busy = true; renderAcct();
+    try {
+      const { data, error } = await cloud.client.from('user_data').select('data,updated_at').eq('user_id', cloud.user.id).maybeSingle();
+      if (error) throw error;
+      const local = mine(), firstHere = load('hb.cloud.uid', '') !== cloud.user.id, dirty = load('hb.cloud.dirty', false);
+      if (!data) { await cloudPush(true); }
+      else if (firstHere) {
+        const merged = isEmpty(local) ? data.data : mergeData(local, data.data || {});
+        applyData(merged); await cloudPush(true);
+        if (!isEmpty(local)) toast(t('syncMerged'));
+      } else if (dirty) { await cloudPush(true); }
+      else { applyData(data.data); cloud.last = Date.parse(data.updated_at) || Date.now(); save('hb.cloud.t', cloud.last); }
+      save('hb.cloud.uid', cloud.user.id);
+      cloud.msg = '';
+    } catch (e) { cloud.msg = t('syncErr'); }
+    cloud.busy = false; renderAcct();
+  }
+  async function cloudPush(now) {
+    if (!cloud.client || !cloud.user) return;
+    clearTimeout(cloud.pushT);
+    const run = async () => {
+      try {
+        const { error } = await cloud.client.from('user_data').upsert({ user_id: cloud.user.id, data: mine(), updated_at: new Date().toISOString() });
+        if (error) throw error;
+        cloud.last = Date.now(); localStorage.setItem('hb.cloud.t', String(cloud.last)); localStorage.setItem('hb.cloud.dirty', 'false'); cloud.msg = '';
+      } catch { cloud.msg = t('syncErr'); }
+      renderAcct();
+    };
+    if (now) return run();
+    cloud.pushT = setTimeout(run, 1200);
+  }
+  onPersonalSave = () => {
+    if (cloud.applying || !cloudOn) return;
+    try { localStorage.setItem('hb.cloud.dirty', 'true'); } catch { }
+    if (cloud.user) cloudPush();
+  };
+  function renderAcctBtn() {
+    const b = $('#acct-btn'); b.hidden = !cloudOn;
+    b.innerHTML = ic('user'); b.classList.toggle('on', !!cloud.user);
+    b.title = cloud.user ? t('acctLoggedIn', { e: cloud.user.email }) : t('login');
+  }
+  function renderAcct() {
+    renderAcctBtn();
+    if (!acctDlg.open) return;
+    const close = `<button class="close" aria-label="${esc(t('close'))}">${icon.x}</button>`;
+    const msg = cloud.msg ? `<p class="acct-msg">${esc(cloud.msg)}</p>` : '';
+    if (cloud.recovery) {
+      acctDlg.innerHTML = `${close}<h2>${esc(t('newPw'))}</h2>
+        <form id="pw-form" class="acct-form"><label class="field"><span>${esc(t('password'))}</span><input id="pw-new" type="password" minlength="6" required autocomplete="new-password"></label>
+        ${msg}<button class="btn" type="submit">${esc(t('savePw'))}</button></form>`;
+      return;
+    }
+    if (cloud.user) {
+      acctDlg.innerHTML = `${close}<h2>${esc(t('account'))}</h2>
+        <div class="acct-card"><span class="acct-avatar">${ic('user')}</span><div><small>${esc(t('loggedInAs'))}</small><strong>${esc(cloud.user.email)}</strong></div></div>
+        <p class="acct-sync">${ic('cloud')} ${esc(cloud.busy ? t('syncing') : cloud.last ? t('syncedAt', { d: new Date(cloud.last).toLocaleString(lang === 'de' ? 'de-CH' : 'en-GB', { dateStyle: 'short', timeStyle: 'short' }) }) : t('syncing'))}</p>
+        <p class="hint">${esc(t('syncHint'))}</p>${msg}
+        <div class="form-actions"><button class="btn ghost" id="acct-sync">${ic('refresh')} ${esc(t('syncNow'))}</button><button class="btn" id="acct-logout">${ic('logout')} ${esc(t('logout'))}</button></div>`;
+      return;
+    }
+    const keepMail = $('#acct-email')?.value || cloud.email || '';
+    const reg = cloud.mode === 'register', forgot = cloud.mode === 'forgot';
+    acctDlg.innerHTML = `${close}<h2>${esc(forgot ? t('forgotPw') : reg ? t('register') : t('login'))}</h2>
+      <p class="hint">${esc(forgot ? t('forgotHint') : t('acctHint'))}</p>
+      ${forgot ? '' : `<div class="segments acct-tabs"><button data-mode="login" class="${!reg ? 'on' : ''}">${esc(t('login'))}</button><button data-mode="register" class="${reg ? 'on' : ''}">${esc(t('register'))}</button></div>`}
+      <form id="acct-form" class="acct-form" novalidate>
+        <label class="field"><span>${esc(t('email'))}</span><input id="acct-email" type="email" required autocomplete="email" inputmode="email" value="${esc(keepMail)}"></label>
+        ${forgot ? '' : `<label class="field"><span>${esc(t('password'))}</span><input id="acct-pw" type="password" minlength="6" required autocomplete="${reg ? 'new-password' : 'current-password'}">${reg ? `<small>${esc(t('pwHint'))}</small>` : ''}</label>`}
+        ${msg}
+        <button class="btn" type="submit" ${cloud.busy ? 'disabled' : ''}>${esc(forgot ? t('sendLink') : reg ? t('createAcct') : t('login'))}</button>
+        <button type="button" class="btn-text" data-mode="${forgot ? 'login' : 'forgot'}">${esc(forgot ? t('backToLogin') : t('forgotPw'))}</button>
+      </form>`;
+  }
+  async function cloudInit() {
+    renderAcctBtn();
+    if (!cloudOn) return;
+    try {
+      await loadScript('vendor/supabase.js');
+      cloud.client = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey, { auth: { persistSession: true, detectSessionInUrl: true } });
+      cloud.client.auth.onAuthStateChange((ev, session) => {
+        const u = session?.user || null, changed = (u?.id || null) !== (cloud.user?.id || null);
+        cloud.user = u;
+        if (ev === 'PASSWORD_RECOVERY') { cloud.recovery = true; if (!acctDlg.open) acctDlg.showModal(); }
+        renderAcct();
+        if (changed && u) setTimeout(cloudPull, 0);
+      });
+      const { data } = await cloud.client.auth.getSession();
+      cloud.user = data.session?.user || null; renderAcct();
+      if (cloud.user) cloudPull();
+    } catch { cloud.msg = t('syncErr'); renderAcctBtn(); }
+  }
+  $('#acct-btn').addEventListener('click', () => { cloud.msg = ''; acctDlg.showModal(); renderAcct(); });
+  acctDlg.addEventListener('click', async e => {
+    if (e.target === acctDlg || e.target.closest('.close')) { acctDlg.close(); return; }
+    const m = e.target.closest('[data-mode]'); if (m) { cloud.mode = m.dataset.mode; cloud.msg = ''; renderAcct(); return; }
+    if (e.target.closest('#acct-sync')) { await cloudPush(true); await cloudPull(); toast(t('synced')); return; }
+    if (e.target.closest('#acct-logout')) {
+      await cloudPush(true);
+      await cloud.client.auth.signOut();
+      cloud.user = null; try { localStorage.removeItem('hb.cloud.uid'); } catch { }
+      acctDlg.close(); toast(t('loggedOut')); renderAcctBtn(); return;
+    }
+  });
+  acctDlg.addEventListener('submit', async e => {
+    e.preventDefault();
+    const c = cloud.client; if (!c) return;
+    cloud.busy = true; cloud.msg = '';
+    const errText = err => {
+      const m = String(err?.message || '');
+      if (/invalid login/i.test(m)) return t('errLogin');
+      if (/already registered|already exists/i.test(m)) return t('errExists');
+      if (/not confirmed/i.test(m)) return t('errConfirm');
+      if (/password/i.test(m) && /6|short|weak/i.test(m)) return t('pwHint');
+      return t('errGeneric') + (m ? ' (' + m + ')' : '');
+    };
+    try {
+      if (e.target.id === 'pw-form') {
+        const { error } = await c.auth.updateUser({ password: $('#pw-new').value }); if (error) throw error;
+        cloud.recovery = false; toast(t('pwSaved'));
+      } else {
+        const email = $('#acct-email').value.trim(), pw = $('#acct-pw')?.value || '';
+        cloud.email = email;
+        if (!/^\S+@\S+\.\S+$/.test(email)) throw { mine: t('errEmail') };
+        if (cloud.mode === 'forgot') {
+          const { error } = await c.auth.resetPasswordForEmail(email, { redirectTo: baseURL() }); if (error) throw error;
+          cloud.msg = t('linkSent');
+        } else if (cloud.mode === 'register') {
+          if (pw.length < 6) throw { mine: t('pwHint') };
+          const { data, error } = await c.auth.signUp({ email, password: pw, options: { emailRedirectTo: baseURL() } }); if (error) throw error;
+          if (!data.session) cloud.msg = t('checkMail', { e: email }); else { acctDlg.close(); toast(t('welcome')); }
+        } else {
+          const { error } = await c.auth.signInWithPassword({ email, password: pw }); if (error) throw error;
+          acctDlg.close(); toast(t('welcome'));
+        }
+      }
+    } catch (err) { cloud.msg = err?.mine || errText(err); }
+    cloud.busy = false; renderAcct();
   });
 
   // ---------- Routing ----------
@@ -1370,6 +1556,7 @@
   route();
   updateThemeColor();
   init();
+  cloudInit();
 
   // Für Tests
   window.__hb = { state, status, scaleMeasure, guessIngredients, afVersion, season, computeTools };

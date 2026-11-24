@@ -251,8 +251,8 @@ h2.sub, .section-title { font-size: 22px; margin: 34px 0 4px; display: flex; ali
 .af-btn.on { border-color: var(--ok); color: var(--ok); }
 .af-btn.on .af-dot { background: var(--ok-soft); border-color: var(--ok); }
 .af-btn.on .af-dot::after { transform: translateX(12px); background: var(--ok); }
-@media (max-width: 760px) { .logo { font-size: 20px; margin-right: auto; } .af-btn { padding: 0 10px 0 8px; } .round-btn { width: 36px; height: 36px; } .af-btn { height: 36px; } }
-@media (max-width: 370px) { .logo span:not(.logo-mark) { display: none; } }
+@media (max-width: 760px) { .logo { font-size: 19px; margin-right: auto; white-space: nowrap; } .top-actions { gap: 6px; } .af-btn { padding: 0 10px 0 8px; } .round-btn { width: 36px; height: 36px; } .af-btn { height: 36px; } }
+@media (max-width: 400px) { .logo span:not(.logo-mark) { display: none; } }
 
 .guest-banner { background: var(--accent); color: var(--accent-ink); }
 .guest-inner { max-width: 1180px; margin: 0 auto; padding: 10px 16px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; font-weight: 500; font-size: 14px; }
@@ -501,3 +501,21 @@ h2.sub, .section-title { font-size: 22px; margin: 34px 0 4px; display: flex; ali
   .bottle-svg { height: 74px; }
   .bottle-name { font-size: 11.5px; }
 }
+
+/* ---------- Konto ---------- */
+.acct-btn.on { color: var(--accent); box-shadow: inset 0 0 0 2px var(--accent); }
+#acct { max-width: 440px; }
+#acct h2 { margin: 0 0 6px; }
+.acct-tabs { margin: 14px 0 4px; width: 100%; }
+.acct-tabs button { flex: 1; }
+.acct-form { display: flex; flex-direction: column; gap: 14px; margin-top: 14px; }
+.acct-form .btn { width: 100%; justify-content: center; }
+.acct-msg { margin: 0; padding: 10px 12px; border-radius: 12px; background: var(--surface-2); font-size: 14px; line-height: 1.45; }
+.acct-card { display: flex; align-items: center; gap: 12px; margin: 16px 0 10px; padding: 14px; border-radius: 16px; background: var(--surface-2); }
+.acct-card small { display: block; color: var(--muted); }
+.acct-card strong { word-break: break-all; }
+.acct-avatar { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--accent); color: #fff; flex: none; }
+.acct-sync { display: flex; align-items: center; gap: 8px; margin: 8px 0 0; font-weight: 600; }
+.acct-sync svg, .acct-avatar svg { width: 20px; height: 20px; }
+#acct .form-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+#acct .form-actions .btn { flex: 1; justify-content: center; }

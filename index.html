@@ -33,6 +33,7 @@
         <button class="af-btn" id="af-btn" aria-pressed="false">
           <span class="af-dot"></span><span data-i18n="afShort">0,0 %</span>
         </button>
+        <button class="round-btn acct-btn" id="acct-btn" hidden aria-label="Konto"></button>
         <button class="round-btn lang-btn" id="lang-btn" aria-label="Sprache / Language">EN</button>
         <button class="round-btn" id="theme-btn" aria-label="Hell/Dunkel">
           <svg class="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></svg>
@@ -183,8 +184,10 @@
   </dialog>
 
   <dialog id="share" class="sheet"></dialog>
+  <dialog id="acct" class="sheet"></dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
+  <script src="config.js"></script>
   <script src="icons.js"></script>
   <script src="translations.js"></script>
   <script src="i18n.js"></script>
