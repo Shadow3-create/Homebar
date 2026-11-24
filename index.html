@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Home Bar – Was kann ich mixen?</title>
+  <meta name="description" content="Gib ein, was du zuhause hast, und sieh alle Drinks, die du daraus mixen kannst.">
+  <meta name="theme-color" content="#f7f4ef">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍸</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script>try{var t=localStorage.getItem('hb.theme');if(t)document.documentElement.dataset.theme=t;var l=localStorage.getItem('hb.lang');if(l)document.documentElement.lang=l;}catch(e){}</script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a href="#mix" class="logo"><span class="logo-mark">🍸</span> <span data-i18n="appName">Home Bar</span></a>
+      <nav class="nav" id="nav">
+        <a href="#mix" data-view="mix">
+          <svg viewBox="0 0 24 24"><path d="M4 4h16l-8 9-8-9Zm8 9v7m-4 0h8"/></svg><span data-i18n="navMix">Mixen</span></a>
+        <a href="#bar" data-view="bar">
+          <svg viewBox="0 0 24 24"><path d="M9 3h6m-5 0v4.5L7.5 11A4 4 0 0 0 7 13v6a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-6a4 4 0 0 0-.5-2L14 7.5V3"/></svg><span data-i18n="navBar">Meine Bar</span></a>
+        <a href="#all" data-view="all">
+          <svg viewBox="0 0 24 24"><path d="M4 5h6v6H4zM14 5h6v6h-6zM4 15h6v6H4zM14 15h6v6h-6z"/></svg><span data-i18n="navAll">Alle Drinks</span></a>
+        <a href="#shop" data-view="shop">
+          <svg viewBox="0 0 24 24"><path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 2-1.5L21 8H6"/><circle cx="10" cy="20.5" r="1"/><circle cx="17" cy="20.5" r="1"/></svg><span data-i18n="navShop">Einkaufen</span></a>
+        <a href="#new" data-view="new">
+          <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span data-i18n="navNew">Neues Rezept</span></a>
+      </nav>
+      <div class="top-actions">
+        <button class="af-btn" id="af-btn" aria-pressed="false">
+          <span class="af-dot"></span><span data-i18n="afShort">0,0 %</span>
+        </button>
+        <button class="round-btn lang-btn" id="lang-btn" aria-label="Sprache / Language">EN</button>
+        <button class="round-btn" id="theme-btn" aria-label="Hell/Dunkel">
+          <svg class="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></svg>
+          <svg class="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div id="guest-banner" class="guest-banner" hidden></div>
+
+  <main id="app">
+    <!-- MIXEN -->
+    <section class="view" id="view-mix">
+      <div class="hero">
+        <p class="eyebrow" data-i18n="mixEyebrow">Deine Home Bar</p>
+        <h1 id="mix-title">Was kann ich mixen?</h1>
+        <p class="lead" id="mix-lead"></p>
+      </div>
+      <div class="toolbar"><div class="tags tagfilter"></div></div>
+      <div id="mix-content"></div>
+    </section>
+
+    <!-- MEINE BAR -->
+    <section class="view" id="view-bar">
+      <div class="hero">
+        <p class="eyebrow" data-i18n="navBar">Meine Bar</p>
+        <h1 data-i18n="barTitle">Was hast du zuhause?</h1>
+        <p class="lead" data-i18n="barLead">Füge alles hinzu: Alkohol, Säfte, Sirup, Früchte, Eis … Es zählen alle Zutaten.</p>
+      </div>
+      <div class="search-row">
+        <div class="search-wrap">
+          <svg class="search-ico" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input id="ing-input" type="search" autocomplete="off" data-i18n-ph="ingPh" placeholder="Zutat suchen …">
+          <ul id="ing-suggest" class="suggest" role="listbox" hidden></ul>
+        </div>
+        <button class="btn scan-btn" id="scan-btn" type="button">
+          <svg viewBox="0 0 24 24"><path d="M4 7V5a1 1 0 0 1 1-1h2M17 4h2a1 1 0 0 1 1 1v2M20 17v2a1 1 0 0 1-1 1h-2M7 20H5a1 1 0 0 1-1-1v-2M7 8v8M10 8v8M13 8v8M16 8v8"/></svg>
+          <span data-i18n="scanBtn">Flasche scannen</span></button>
+      </div>
+      <div class="bar-head">
+        <h2><span data-i18n="shelf">Im Regal</span> <span class="count" id="bar-count">0</span></h2>
+        <div class="bar-tools">
+          <button class="btn-text" id="bar-share" data-i18n="shareBar">Bar teilen</button>
+          <button class="btn-text muted" id="bar-clear" data-i18n="clearAll" hidden>Alles entfernen</button>
+        </div>
+      </div>
+      <p class="hint" id="bar-hint" data-i18n="lowHint">Tipp: Tippe auf eine Zutat, um sie als „fast leer“ zu markieren. Sie kommt dann auf die Einkaufsliste.</p>
+      <div id="bar-chips" class="chips"></div>
+      <div id="buy-box"></div>
+      <h2 class="sub" data-i18n="popular">Beliebte Zutaten</h2>
+      <p class="hint" data-i18n="tapToAdd">Antippen zum Hinzufügen</p>
+      <div id="popular-chips" class="chips"></div>
+    </section>
+
+    <!-- ALLE DRINKS -->
+    <section class="view" id="view-all">
+      <div class="hero">
+        <p class="eyebrow" data-i18n="overview">Übersicht</p>
+        <h1 data-i18n="navAll">Alle Drinks</h1>
+        <p class="lead" id="all-lead"></p>
+      </div>
+      <div class="toolbar">
+        <div class="search-wrap small">
+          <svg class="search-ico" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input id="all-search" type="search" data-i18n-ph="drinkPh" placeholder="Drink oder Zutat suchen …">
+        </div>
+        <div class="segments" id="all-filter">
+          <button data-f="all" class="on" data-i18n="fAll">Alle</button>
+          <button data-f="can" data-i18n="fCan">Kann ich mixen</button>
+          <button data-f="nonalc" data-i18n="fNonalc">Alkoholfrei</button>
+          <button data-f="own" data-i18n="fOwn">Eigene</button>
+        </div>
+        <div class="tags tagfilter"></div>
+      </div>
+      <div id="all-grid" class="grid"></div>
+      <div class="more-wrap"><button class="btn ghost" id="all-more" data-i18n="more" hidden>Mehr anzeigen</button></div>
+    </section>
+
+    <!-- EINKAUFSLISTE -->
+    <section class="view" id="view-shop">
+      <div class="hero">
+        <p class="eyebrow" data-i18n="shopEyebrow">Einkaufsliste</p>
+        <h1 data-i18n="shopTitle">Was fehlt dir noch?</h1>
+        <p class="lead" data-i18n="shopLead">Öffne einen Drink und tippe auf „Fehlendes auf die Einkaufsliste“. Abgehakte Sachen kommen mit einem Tipp in deine Bar.</p>
+      </div>
+      <div id="shop-content"></div>
+    </section>
+
+    <!-- EIGENES REZEPT -->
+    <section class="view" id="view-new">
+      <div class="hero">
+        <p class="eyebrow" data-i18n="ownEyebrow">Eigenes Rezept</p>
+        <h1 id="form-title">Neuen Drink anlegen</h1>
+        <p class="lead" data-i18n="ownLead">Deine Rezepte werden auf diesem Gerät gespeichert und erscheinen bei allen Drinks.</p>
+      </div>
+      <form id="recipe-form" class="form" novalidate>
+        <div class="form-grid">
+          <label class="img-drop" id="img-drop">
+            <input type="file" accept="image/*" id="f-img-file" hidden>
+            <img id="f-img-preview" alt="" hidden>
+            <span class="img-drop-text" id="img-drop-text">📷<br><span data-i18n="uploadImg">Bild hochladen</span><br><small data-i18n="optional">optional</small></span>
+          </label>
+          <div class="form-fields">
+            <label class="field"><span data-i18n="fName">Name *</span><input id="f-name" required maxlength="80" data-i18n-ph="fNamePh"></label>
+            <label class="field"><span data-i18n="fImgUrl">Bild-Link (statt Upload)</span><input id="f-img-url" type="url" placeholder="https://…"></label>
+            <div class="row2">
+              <label class="field"><span data-i18n="fKind">Art</span>
+                <select id="f-alc"><option value="Alcoholic" data-i18n="withAlc">Mit Alkohol</option><option value="Non alcoholic" data-i18n="noAlc">Alkoholfrei</option></select></label>
+              <label class="field"><span data-i18n="fGlass">Glas</span><input id="f-glass" maxlength="40" data-i18n-ph="fGlassPh"></label>
+            </div>
+            <div class="field"><span><span data-i18n="fTaste">Geschmack & Stimmung</span> <small data-i18n="fTasteHint">(leer = automatisch)</small></span>
+              <div class="tags" id="f-tags"></div>
+            </div>
+          </div>
+        </div>
+        <fieldset class="field">
+          <span data-i18n="fIngs">Zutaten *</span>
+          <div id="f-ings"></div>
+          <button type="button" class="btn-text" id="f-add-ing" data-i18n="fAddIng">+ Zutat hinzufügen</button>
+        </fieldset>
+        <label class="field"><span data-i18n="fInstr">Zubereitung</span><textarea id="f-instr" rows="4" maxlength="2000" data-i18n-ph="fInstrPh"></textarea></label>
+        <p class="form-error" id="f-error" hidden></p>
+        <div class="form-actions">
+          <button type="button" class="btn ghost" id="f-cancel" data-i18n="cancel" hidden>Abbrechen</button>
+          <button type="submit" class="btn" data-i18n="saveRecipe">Rezept speichern</button>
+        </div>
+        <datalist id="ing-datalist"></datalist>
+      </form>
+    </section>
+
+    <footer class="footer"><span data-i18n="footer">Rezepte & Bilder:</span> <a href="https://www.thecocktaildb.com" target="_blank" rel="noopener">TheCocktailDB</a> · <span data-i18n="footer2">Produktdaten:</span> <a href="https://world.openfoodfacts.org" target="_blank" rel="noopener">Open Food Facts</a> · <span data-i18n="footer3">Bitte genieße Alkohol verantwortungsvoll.</span></footer>
+  </main>
+
+  <dialog id="detail" class="detail"></dialog>
+
+  <dialog id="scan" class="sheet">
+    <button class="close" id="scan-close" aria-label="×"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    <h2 data-i18n="scanBtn">Flasche scannen</h2>
+    <p class="hint" data-i18n="scanHint">Halte den Strichcode (Barcode) der Flasche vor die Kamera.</p>
+    <div id="reader" class="reader"></div>
+    <div id="scan-result"></div>
+    <div class="scan-alt">
+      <label class="btn ghost file-btn">📷 <span data-i18n="scanPhoto">Foto vom Barcode</span><input type="file" accept="image/*" id="scan-file" hidden></label>
+      <div class="manual-code"><input id="scan-code" inputmode="numeric" data-i18n-ph="scanCodePh" placeholder="Nummer eintippen" maxlength="14"><button class="btn ghost" id="scan-code-go" data-i18n="search">Suchen</button></div>
+    </div>
+    <p class="fine" data-i18n="scanFine">Produktdaten von Open Food Facts (kostenlos). Nicht jede Flasche ist dort eingetragen.</p>
+  </dialog>
+
+  <dialog id="share" class="sheet"></dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="translations.js"></script>
+  <script src="i18n.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
