@@ -5,6 +5,7 @@
 
   const API = 'https://www.thecocktaildb.com/api/json/v1/1/';
   const OFF = 'https://world.openfoodfacts.org/api/v2/product/';
+  const ING_IMG_M = n => `https://www.thecocktaildb.com/images/ingredients/${encodeURIComponent(n)}-Medium.png`;
   const ING_IMG = n => `https://www.thecocktaildb.com/images/ingredients/${encodeURIComponent(n)}-Small.png`;
   const K = {
     db: 'hb.db.v1', bar: 'hb.bar.v1', own: 'hb.own.v1', fav: 'hb.fav.v1', theme: 'hb.theme', shop: 'hb.shop.v1',
@@ -28,6 +29,12 @@
     x: '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>',
     heart: '<svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-9.2-9A5 5 0 0 1 12 6a5 5 0 0 1 9.2 5C19 15.6 12 20 12 20Z"/></svg>'
   };
+
+  const ICONS = window.HB_ICONS || {};
+  const ic = (n, cls = '') => `<svg class="ic ${cls}" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n] || ''}</svg>`;
+  window.hbNoImg = `<span class="noimg">${ic('bottle')}</span>`;
+  window.hbBottle = `<svg class="bottle-svg" viewBox="0 0 40 100" aria-hidden="true"><path d="M15 2h10v22l6 10v60a4 4 0 0 1-4 4H13a4 4 0 0 1-4-4V34l6-10z"/><rect x="11" y="48" width="18" height="26" rx="2"/></svg>`;
+  const favLabel = id => `${ic('heart')}<span>${esc(state.favs.has(id) ? t('isFav') : t('makeFav'))}</span>`;
 
   // ---------- Sprache ----------
   let lang = load(K.lang, null) || 'de';
@@ -152,6 +159,13 @@
     if (reBeer.test(k)) return .05;
     return 0;
   }
+  function shelfGroup(k) {
+    const a = abvOf(k);
+    if (a >= .35 && !reLiqueur.test(k)) return 'spirits';
+    if (a > 0) return 'liqueurs';
+    if (/juice|soda|tonic|cola|coke|sprite|7-up|lemonade|limeade|ginger|water|syrup|grenadine|nectar|cordial|milk|cream|coffee|espresso|tea|bitters|red bull|pepsi|sour mix|non-alcoholic|schweppes|fanta/.test(k)) return 'mixers';
+    return 'pantry';
+  }
   function computeTaste(d) {
     let sweet = 0, sour = 0, fruit = 0, fresh = 0, winter = 0, vol = 0, alc = 0;
     const txt = ((d.instr || '') + ' ' + (d.instrDE || '')).toLowerCase();
@@ -196,16 +210,16 @@
     if (d.ings.some(i => /oz|cl|ml|shot|jigger|part/i.test(i.measure))) add('jigger');
     return out;
   }
-  const TOOL_ICON = { shaker: '🍶', strainer: '🥢', spoon: '🥄', mixglass: '🫙', blender: '🌀', muddler: '🪵', rim: '🧂', pot: '♨️', grater: '🧀', jigger: '⚖️' };
+  const TOOL_ICON = { shaker: 'shaker', strainer: 'strainer', spoon: 'spoon', mixglass: 'mixglass', blender: 'blender', muddler: 'muddler', rim: 'rim', pot: 'pot', grater: 'grater', jigger: 'jigger' };
   function glassEmoji(g) {
     g = key(g);
-    if (/champagne|flute|coupe/.test(g)) return '🥂';
-    if (/wine|balloon/.test(g)) return '🍷';
-    if (/coffee|irish|cup/.test(g)) return '☕';
-    if (/beer|pint|stein/.test(g)) return '🍺';
-    if (/old-fashioned|whiskey|shot|snifter|cordial|rocks/.test(g)) return '🥃';
-    if (/highball|collins|hurricane|jar|pitcher|punch|copper/.test(g)) return '🥤';
-    return '🍸';
+    if (/champagne|flute|coupe/.test(g)) return 'wine';
+    if (/wine|balloon/.test(g)) return 'wine';
+    if (/coffee|irish|cup/.test(g)) return 'coffee';
+    if (/beer|pint|stein/.test(g)) return 'beer';
+    if (/old-fashioned|whiskey|shot|snifter|cordial|rocks/.test(g)) return 'tumbler';
+    if (/highball|collins|hurricane|jar|pitcher|punch|copper/.test(g)) return 'soda';
+    return 'martini';
   }
 
   // Alkoholfreie Version eines Drinks (oder null, wenn es keine sinnvolle Alternative gibt)
@@ -295,6 +309,14 @@
     const dec = /\b(cl|ml|dl|l|g|kg)\b/i.test(m);
     return m.replace(NUM, (_, a, b, c, d, e, f) => { const v = numVal(a, b, c, d, e, f) * n; return dec || Number.isInteger(v) ? fmtDec(v) : fmtFrac(v); });
   }
+
+  const MEASURE_DE = [[/\bjuice of\b/gi, 'Saft von'], [/\btblsp\b|\btbsp\b|\btablespoons?\b/gi, 'EL'], [/\btsp\b|\bteaspoons?\b/gi, 'TL'],
+    [/\bcups?\b/gi, 'Tasse(n)'], [/\bdash(es)?\b/gi, 'Spritzer'], [/\bsplash\b/gi, 'Schuss'], [/\bslices?\b/gi, 'Scheibe(n)'], [/\bwedges?\b/gi, 'Spalte(n)'],
+    [/\btwist of\b/gi, 'Zeste von'], [/\bgarnish( with)?\b/gi, 'Garnitur'], [/\btop( up)?( with)?\b/gi, 'auffüllen'], [/\bfill( with)?\b/gi, 'auffüllen'],
+    [/\bto taste\b/gi, 'nach Geschmack'], [/\bpinch\b/gi, 'Prise'], [/\bleaves\b/gi, 'Blätter'], [/\bsprigs?\b/gi, 'Zweig(e)'], [/\bshots?\b/gi, 'Shot'],
+    [/\bparts?\b/gi, 'Teil(e)'], [/\bcans?\b/gi, 'Dose(n)'], [/\bbottles?\b/gi, 'Flasche(n)'], [/\bcubes?\b/gi, 'Würfel'], [/\bchilled\b/gi, 'gekühlt'],
+    [/\bcrushed\b/gi, 'gestoßen'], [/\bfresh\b/gi, 'frisch'], [/\bwhole\b/gi, 'ganz'], [/\bsmall\b/gi, 'klein'], [/\blarge\b/gi, 'groß'], [/\bof\b/gi, '']];
+  const measureText = m => lang === 'de' ? MEASURE_DE.reduce((s, [re, r]) => s.replace(re, r), m).replace(/\s{2,}/g, ' ').trim() : m;
 
   // ---------- Daten laden ----------
   function normalize(r) {
@@ -388,15 +410,15 @@
     }
     return true;
   }
-  const TAGS = [['fav', '♥'], ['made', '🕘'], ['sweet', '🍬'], ['sour', '🍋'], ['strong', '🔥'], ['fruity', '🍓'], ['fresh', '🧊'], ['winter', '❄️'], ['party', '🎉']];
+  const TAGS = [['fav', 'heart'], ['made', 'history'], ['sweet', 'candy'], ['sour', 'citrus'], ['strong', 'flame'], ['fruity', 'cherry'], ['fresh', 'droplets'], ['winter', 'snowflake'], ['party', 'party']];
   function renderTagBars() {
     $$('.tagfilter').forEach(box => {
       box.innerHTML = TAGS.filter(([tg]) => !(tg === 'strong' && state.af))
-        .map(([tg, e]) => `<button data-t="${tg}" class="${state.tags.has(tg) ? 'on' : ''}">${e} ${esc(t('tag_' + tg))}</button>`).join('');
+        .map(([tg, e]) => `<button data-t="${tg}" class="${state.tags.has(tg) ? 'on' : ''}">${ic(e)}<span>${esc(t('tag_' + tg))}</span></button>`).join('');
     });
     const ft = $('#f-tags');
     const sel = new Set($$('button.on', ft).map(b => b.dataset.t));
-    ft.innerHTML = TAGS.slice(2).map(([tg, e]) => `<button type="button" data-t="${tg}" class="${sel.has(tg) ? 'on' : ''}">${e} ${esc(t('tag_' + tg))}</button>`).join('');
+    ft.innerHTML = TAGS.slice(2).map(([tg, e]) => `<button type="button" data-t="${tg}" class="${sel.has(tg) ? 'on' : ''}">${ic(e)}<span>${esc(t('tag_' + tg))}</span></button>`).join('');
   }
 
   // ---------- Karten ----------
@@ -505,7 +527,7 @@
   const loadingHTML = () => `<p class="loading-note">${esc(t('loading'))}</p>
       <div class="progress"><div style="width:${Math.round(state.progress * 100)}%"></div></div>
       <div class="grid">${'<div class="skeleton"></div>'.repeat(8)}</div>`;
-  const errorHTML = () => `<div class="empty"><div class="big">📡</div><h3>${esc(t('errTitle'))}</h3><p>${esc(t('errText'))}</p><button class="btn" id="retry">${esc(t('retry'))}</button></div>`;
+  const errorHTML = () => `<div class="empty"><div class="big">${ic('wifi')}</div><h3>${esc(t('errTitle'))}</h3><p>${esc(t('errText'))}</p><button class="btn" id="retry">${esc(t('retry'))}</button></div>`;
   const sortByName = (a, b) => a.name.localeCompare(b.name, lang);
 
   function unlockList(limit) {
@@ -531,13 +553,13 @@
     const seasonal = drinks.filter(s.test).filter(passTags)
       .sort((a, b) => sts.get(a.id).missing.length - sts.get(b.id).missing.length || sortByName(a, b)).slice(0, 10);
     const seasonHTML = seasonal.length ? `<section class="season season-${s.id}">
-        <div class="season-head"><span class="season-emoji">${t('season_' + s.id + '_e')}</span><div><h2>${esc(t('season_' + s.id))}</h2><p>${esc(t('season_' + s.id + '_t'))}</p></div></div>
+        <div class="season-head"><span class="season-emoji">${ic(t('season_' + s.id + '_e'))}</span><div><h2>${esc(t('season_' + s.id))}</h2><p>${esc(t('season_' + s.id + '_t'))}</p></div></div>
         <div class="hscroll" id="grid-season"></div></section>` : '';
 
     if (!state.bar.size) {
       $('#mix-title').textContent = t('mixTitle0');
       $('#mix-lead').textContent = t('mixLead0');
-      box.innerHTML = `<div class="empty"><div class="big">🍋🥃🧊</div><h3>${esc(t('emptyBarTitle'))}</h3><p>${esc(t('emptyBarText'))}</p>
+      box.innerHTML = `<div class="empty"><div class="big">${ic('citrus')}${ic('bottle')}${ic('tumbler')}</div><h3>${esc(t('emptyBarTitle'))}</h3><p>${esc(t('emptyBarText'))}</p>
         <a class="btn" href="#bar">${esc(t('addIngs'))}</a></div>` + seasonHTML;
       if (seasonal.length) renderGrid($('#grid-season'), seasonal);
       return;
@@ -566,7 +588,7 @@
     }
     if (recent.length) html += `<h2 class="section-title">${esc(t('history'))} <span class="count">${state.hist.length}×</span></h2>
       <div class="history">${recent.map(({ d, h }) => `<button class="hist-item" data-open="${esc(d.id)}">
-        ${imgSrc(d, 'preview') ? `<img src="${esc(imgSrc(d, 'preview'))}" alt="" loading="lazy">` : '<span class="ph">🍸</span>'}
+        ${imgSrc(d, 'preview') ? `<img src="${esc(imgSrc(d, 'preview'))}" alt="" loading="lazy">` : phHTML()}
         <span><strong>${esc(d.name)}</strong><small>${esc(fmtDate(h.t))} · ${state.hist.filter(x => x.id === d.id).length}×</small></span></button>`).join('')}</div>`;
     box.innerHTML = html;
     if ($('#grid-can')) renderGrid($('#grid-can'), canF);
@@ -589,7 +611,7 @@
     $('#all-lead').textContent = t('allLead', { n: pool().length, m: list.length }) + (state.bar.size ? ' · ' + t('sortedHint') : '') + (state.af ? ' · ' + t('afActiveShort') : '');
     if (!list.length) {
       const own = state.filter === 'own';
-      grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="big">🔍</div><h3>${esc(t('nothing'))}</h3><p>${esc(own ? t('noOwn') : t('tryOther'))}</p>${own ? `<a class="btn" href="#new">${esc(t('createRecipe'))}</a>` : ''}</div>`;
+      grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="big">${ic('search')}</div><h3>${esc(t('nothing'))}</h3><p>${esc(own ? t('noOwn') : t('tryOther'))}</p>${own ? `<a class="btn" href="#new">${esc(t('createRecipe'))}</a>` : ''}</div>`;
       $('#all-more').hidden = true; return;
     }
     renderGrid(grid, list.slice(0, state.shown).map(x => x.d));
@@ -597,7 +619,7 @@
   }
 
   function ingImg(e) {
-    return e && e.db ? `<img src="${esc(ING_IMG(e.name))}" alt="" loading="lazy" onerror="this.outerHTML='<span class=noimg>🍶</span>'">` : '<span class="noimg">🍶</span>';
+    return e && e.db ? `<img src="${esc(ING_IMG(e.name))}" alt="" loading="lazy" onerror="this.outerHTML=window.hbNoImg">` : window.hbNoImg;
   }
   let lastAdded = null;
   function renderBar() {
@@ -606,18 +628,29 @@
     $('#bar-count').textContent = state.bar.size;
     $('#bar-clear').hidden = !state.bar.size || !!state.guest;
     $('#bar-hint').hidden = !state.bar.size || !!state.guest;
-    $('#bar-chips').innerHTML = chips.length ? chips.map(e => {
-      const k = key(e.name), low = state.low.has(k);
-      return `<span class="chip${k === lastAdded ? ' pop' : ''}${low ? ' low' : ''}" data-k="${esc(k)}">
-        <button class="chip-main" data-low="${esc(k)}" title="${esc(t('lowToggle'))}">${ingImg(e)}<span>${esc(ingName(e.name))}</span>${low ? `<span class="low-tag">${esc(t('lowTag'))}</span>` : ''}</button>
-        <button class="chip-x" data-remove="${esc(k)}" aria-label="${esc(t('remove'))}">${icon.x}</button></span>`;
-    }).join('') : `<div class="empty-bar">${esc(t('emptyShelf'))}</div>`;
+    const groups = [['spirits', []], ['liqueurs', []], ['mixers', []], ['pantry', []]];
+    chips.forEach(e => groups.find(g => g[0] === shelfGroup(key(e.name)))[1].push(e));
+    $('#bar-chips').innerHTML = chips.length ? groups.filter(g => g[1].length).map(([g, items]) => `
+      <section class="shelf">
+        <h3 class="shelf-title">${esc(t('shelf_' + g))} <span>${items.length}</span></h3>
+        <div class="shelf-row">${items.map(e => {
+          const k = key(e.name), low = state.low.has(k);
+          return `<div class="bottle${k === lastAdded ? ' drop' : ''}${low ? ' low' : ''}" data-k="${esc(k)}">
+            <button class="bottle-main" data-low="${esc(k)}" title="${esc(t('lowToggle'))}">
+              <span class="bottle-img">${e.db ? `<img src="${esc(ING_IMG_M(e.name))}" alt="" loading="lazy" onerror="this.outerHTML=window.hbBottle">` : window.hbBottle}</span>
+              <span class="bottle-name">${esc(ingName(e.name))}</span>
+              ${low ? `<span class="low-tag">${esc(t('lowTag'))}</span>` : ''}
+            </button>
+            <button class="bottle-x" data-remove="${esc(k)}" aria-label="${esc(t('remove'))}">${icon.x}</button>
+          </div>`;
+        }).join('')}</div>
+      </section>`).join('') : `<div class="empty-bar">${esc(t('emptyShelf'))}</div>`;
     lastAdded = null;
     // Was soll ich kaufen?
     const unlock = unlockList(6);
     $('#buy-box').innerHTML = unlock.length ? `<h2 class="sub">${esc(t('whatToBuy'))}</h2><p class="hint">${esc(t('whatToBuyHint'))}</p>
       <ol class="buy-list">${unlock.map((u, i) => `<li><span class="rank">${i + 1}</span>${ingImg(u.e)}<span class="buy-name">${esc(ingName(u.e.name))}<small>${esc(t('unlocks', { n: u.n }))}</small></span>
-        <button class="btn-mini" data-shopadd="${esc(u.e.name)}" title="${esc(t('toShop'))}">🛒</button><button class="btn-mini" data-add="${esc(u.e.name)}">+ ${esc(t('gotIt'))}</button></li>`).join('')}</ol>` : '';
+        <button class="btn-mini" data-shopadd="${esc(u.e.name)}" title="${esc(t('toShop'))}" aria-label="${esc(t('toShop'))}">${ic('cart')}</button><button class="btn-mini" data-add="${esc(u.e.name)}">+ ${esc(t('gotIt'))}</button></li>`).join('')}</ol>` : '';
     const pop = [...state.ingIndex.entries()].filter(([k, e]) => e.db && !has(k)).sort((a, b) => b[1].count - a[1].count).slice(0, 36);
     $('#popular-chips').innerHTML = pop.length ? pop.map(([, e]) =>
       `<button class="chip add" data-add="${esc(e.name)}">${ingImg(e)}<span>${esc(ingName(e.name))}</span><span class="plus">+</span></button>`).join('')
@@ -649,7 +682,7 @@
   function renderShop() {
     const box = $('#shop-content');
     if (!state.shop.length) {
-      box.innerHTML = `<div class="empty"><div class="big">🛒</div><h3>${esc(t('shopEmpty'))}</h3><p>${esc(t('shopEmptyText'))}</p><a class="btn" href="#mix">${esc(t('seeDrinks'))}</a></div>`;
+      box.innerHTML = `<div class="empty"><div class="big">${ic('cart')}</div><h3>${esc(t('shopEmpty'))}</h3><p>${esc(t('shopEmptyText'))}</p><a class="btn" href="#mix">${esc(t('seeDrinks'))}</a></div>`;
       return;
     }
     const open = state.shop.filter(x => !x.done), done = state.shop.filter(x => x.done);
@@ -689,9 +722,9 @@
     renderCurrent();
   }
   function removeIng(k) {
-    const chip = $(`#bar-chips .chip[data-k="${CSS.escape(k)}"]`);
+    const chip = $(`#bar-chips .bottle[data-k="${CSS.escape(k)}"]`);
     const done = () => { state.bar.delete(k); state.low.delete(k); saveBar(); saveLow(); renderCurrent(); };
-    if (chip && !reduceMotion) chip.animate([{ transform: 'scale(1)', opacity: 1 }, { transform: 'scale(.6)', opacity: 0 }], { duration: 180, easing: 'ease-in' }).onfinish = done;
+    if (chip && !reduceMotion) chip.animate([{ transform: 'none', opacity: 1 }, { transform: 'translateY(-30px) rotate(-8deg)', opacity: 0 }], { duration: 260, easing: 'ease-in' }).onfinish = done;
     else done();
   }
   function toggleLow(k) {
@@ -727,7 +760,7 @@
     if (!exact) sugItems.push({ k: q, e: { name: input.value.trim(), count: 0, db: false }, custom: true });
     sel = 0;
     sug.innerHTML = sugItems.map((x, i) => x.custom
-      ? `<li role="option" data-i="${i}" aria-selected="${i === sel}"><span class="noimg">➕</span><span>${esc(t('addCustom', { x: x.e.name }))}</span></li>`
+      ? `<li role="option" data-i="${i}" aria-selected="${i === sel}"><span class="noimg">${ic('plus')}</span><span>${esc(t('addCustom', { x: x.e.name }))}</span></li>`
       : `<li role="option" data-i="${i}" aria-selected="${i === sel}" class="${has(x.k) ? 'have' : ''}">${ingImg(x.e)}<span>${esc(ingName(x.e.name))}${has(x.k) ? ' ✓' : ''}</span>${lang === 'de' && ingName(x.e.name) !== x.e.name ? `<span class="en">${esc(x.e.name)}</span>` : ''}</li>`).join('');
     sug.hidden = false;
   }
@@ -808,8 +841,8 @@
           <div class="tagline">${tags.map(x => `<span>${esc(x)}</span>`).join('')}</div>
           <div class="need">
             <span class="need-label">${esc(t('youNeed'))}</span>
-            ${d.glass ? `<span class="need-item"><span class="need-ico">${glassEmoji(d.glass)}</span>${esc(glassName(d.glass))}</span>` : ''}
-            ${tools.map(x => `<span class="need-item"><span class="need-ico">${TOOL_ICON[x]}</span>${esc(t('tool_' + x))}</span>`).join('')}
+            ${d.glass ? `<span class="need-item"><span class="need-ico">${ic(glassEmoji(d.glass))}</span>${esc(glassName(d.glass))}</span>` : ''}
+            ${tools.map(x => `<span class="need-item"><span class="need-ico">${ic(TOOL_ICON[x])}</span>${esc(t('tool_' + x))}</span>`).join('')}
           </div>
           <div class="ing-head"><h4>${esc(t('ingredients'))}</h4>
             <div class="stepper"><button data-pers="-1" aria-label="−">−</button>
@@ -819,23 +852,23 @@
             return `<li class="${ok ? 'have' : 'missing'}"><span class="st">${ok ? '✓' : '!'}</span>
               <span class="name">${esc(ingName(i.name))}${i.orig ? `<small class="instead">${esc(t('insteadOf', { x: ingName(i.orig) }))}</small>` : ''}</span>
               ${!ok && !dup && !state.guest ? `<button class="add-one" data-add="${esc(i.name)}">+ ${esc(t('gotIt'))}</button>` : ''}
-              <span class="measure">${esc(scaleMeasure(i.measure, state.persons))}</span></li>`;
+              <span class="measure">${esc(measureText(scaleMeasure(i.measure, state.persons)))}</span></li>`;
           }).join('')}</ul>
-          ${st.missing.length ? `<button class="btn shop-btn" data-toshop="${esc(d.id)}">🛒 ${esc(t('missingToShop', { n: st.missing.length }))}</button>` : ''}
+          ${st.missing.length ? `<button class="btn shop-btn" data-toshop="${esc(d.id)}">${ic('cart')} ${esc(t('missingToShop', { n: st.missing.length }))}</button>` : ''}
           ${instr ? `<h4>${esc(t('preparation'))}</h4><p class="instr">${esc(instr)}</p>` : ''}
-          ${af?.changed ? `<p class="hint af-hint">🌱 ${esc(t('afHint'))}</p>` : ''}
+          ${af?.changed ? `<p class="hint af-hint">${ic('sprout')} ${esc(t('afHint'))}</p>` : ''}
           <div class="rate-box">
             <h4>${esc(t('yourRating'))}</h4>
-            <div class="stars">${[1, 2, 3, 4, 5].map(n => `<button data-rate="${n}" class="${note.r >= n ? 'on' : ''}" aria-label="${n}/5">★</button>`).join('')}</div>
+            <div class="stars">${[1, 2, 3, 4, 5].map(n => `<button data-rate="${n}" class="${note.r >= n ? 'on' : ''}" aria-label="${n}/5">${ic('star')}</button>`).join('')}</div>
             <textarea id="note-text" rows="2" maxlength="1000" placeholder="${esc(t('notePh'))}">${esc(note.n || '')}</textarea>
           </div>
           <div class="made-row">
-            <button class="btn" data-made="${esc(d.id)}">🍹 ${esc(t('madeToday'))}</button>
+            <button class="btn" data-made="${esc(d.id)}">${ic('martini')} ${esc(t('madeToday'))}</button>
             <span class="made-info">${made.length ? esc(t('madeInfo', { n: made.length, d: fmtDate(made[made.length - 1].t) })) : ''}</span>
           </div>
           <div class="detail-actions">
-            <button class="btn ghost" data-fav="${esc(d.id)}">${state.favs.has(d.id) ? '♥ ' + esc(t('isFav')) : '♡ ' + esc(t('makeFav'))}</button>
-            <button class="btn ghost" data-sharedrink="${esc(d.id)}">↗ ${esc(t('share'))}</button>
+            <button class="btn ghost" data-fav="${esc(d.id)}">${favLabel(d.id)}</button>
+            <button class="btn ghost" data-sharedrink="${esc(d.id)}">${ic('share')} ${esc(t('share'))}</button>
             ${d.own && !state.guest ? `<button class="btn ghost" data-edit="${esc(d.id)}">${esc(t('edit'))}</button><button class="btn danger" data-del="${esc(d.id)}">${esc(t('delete'))}</button>` : ''}
           </div>
         </div>
@@ -872,7 +905,7 @@
       <label class="field"><span>${esc(t('yourName'))}</span><input id="share-name" maxlength="30" placeholder="${esc(t('yourNamePh'))}"></label>
       <label class="check"><input type="checkbox" id="share-bar" checked> ${esc(t('shareIncBar', { n: state.bar.size }))}</label>
       <label class="check"><input type="checkbox" id="share-fav" ${state.favs.size ? 'checked' : ''}> ${esc(t('shareIncFav', { n: state.favs.size }))}</label>
-      <div class="form-actions"><button class="btn" id="share-go">↗ ${esc(t('createLink'))}</button></div>`;
+      <div class="form-actions"><button class="btn" id="share-go">${ic('share')} ${esc(t('createLink'))}</button></div>`;
     shareDlg.showModal();
   }
   shareDlg.addEventListener('click', e => {
@@ -933,7 +966,7 @@
   function renderGuestBanner() {
     const b = $('#guest-banner'), g = state.guest;
     b.hidden = !g; if (!g) { b.innerHTML = ''; return; }
-    b.innerHTML = `<div class="guest-inner"><span>👀 ${esc(g.name ? t('guestOf', { n: g.name }) : t('guestAnon'))} · ${esc(t('guestCounts', { a: g.bar.length, b: g.favs.length + g.own.length }))}</span>
+    b.innerHTML = `<div class="guest-inner"><span>${ic('heart')} ${esc(g.name ? t('guestOf', { n: g.name }) : t('guestAnon'))} · ${esc(t('guestCounts', { a: g.bar.length, b: g.favs.length + g.own.length }))}</span>
       <div class="guest-actions">
         ${g.bar.length ? `<button class="btn-mini" data-guest="merge">${esc(t('guestMerge'))}</button>` : ''}
         ${g.favs.length + g.own.length ? `<button class="btn-mini" data-guest="favs">${esc(t('guestFavs'))}</button>` : ''}
@@ -982,7 +1015,7 @@
       await scanner.start({ facingMode: 'environment' }, { fps: 10, qrbox: (w, h) => ({ width: Math.floor(Math.min(w * .85, 320)), height: Math.floor(Math.min(h * .5, 150)) }) },
         code => onCode(code), () => { });
     } catch {
-      $('#reader').innerHTML = `<div class="reader-msg">📷 ${esc(t('camFail'))}</div>`;
+      $('#reader').innerHTML = `<div class="reader-msg">${ic('camera')} ${esc(t('camFail'))}</div>`;
     }
   }
   async function stopScanner() {
@@ -1053,7 +1086,7 @@
     await stopScanner();
     $('#reader').innerHTML = '';
     const box = $('#scan-result');
-    box.innerHTML = `<div class="scan-card">🔎 ${esc(t('lookingUp', { c: code }))}</div>`;
+    box.innerHTML = `<div class="scan-card">${ic('search')} ${esc(t('lookingUp', { c: code }))}</div>`;
     const again = `<button class="btn-text" id="scan-again">${esc(t('scanAgain'))}</button>`;
     try {
       const r = await fetch(`${OFF}${encodeURIComponent(code)}.json?fields=product_name,product_name_de,product_name_en,generic_name,brands,categories_tags,image_small_url`);
@@ -1063,7 +1096,7 @@
       const title = [String(p.brands || '').split(',')[0], p.product_name || p.product_name_de || p.product_name_en].filter(Boolean).join(' – ') || code;
       const guesses = guessIngredients(p);
       box.innerHTML = `<div class="scan-card">
-        <div class="scan-prod">${/^https:\/\//.test(p.image_small_url || '') ? `<img src="${esc(p.image_small_url)}" alt="">` : '<span class="noimg">🍾</span>'}<div><small>${esc(t('found'))}</small><strong>${esc(title)}</strong></div></div>
+        <div class="scan-prod">${/^https:\/\//.test(p.image_small_url || '') ? `<img src="${esc(p.image_small_url)}" alt="">` : window.hbNoImg}<div><small>${esc(t('found'))}</small><strong>${esc(title)}</strong></div></div>
         ${guesses.length ? `<p>${esc(t('addAs'))}</p><div class="chips">${guesses.map((g, i) => `<button class="chip add${i === 0 ? ' best' : ''}" data-scanadd="${esc(g)}">${ingImg(state.ingIndex.get(key(g)) || { name: g, db: true })}<span>${esc(ingName(g))}</span><span class="plus">+</span></button>`).join('')}</div>`
           : `<p>${esc(t('noMatch'))}</p>`}
         <div class="scan-more"><button class="btn-text" data-scantype>${esc(t('typeOther'))}</button>${again}</div></div>`;
@@ -1143,7 +1176,7 @@
       const id = fav.dataset.fav;
       state.favs.has(id) ? state.favs.delete(id) : state.favs.add(id); saveFavs();
       toast(state.favs.has(id) ? t('favOn') : t('favOff'));
-      if (dlg.open) fav.textContent = state.favs.has(id) ? '♥ ' + t('isFav') : '♡ ' + t('makeFav');
+      if (dlg.open) { fav.innerHTML = favLabel(id); fav.classList.toggle('fav-on', state.favs.has(id)); }
       else {
         $$(`.fav[data-fav="${CSS.escape(id)}"]`).forEach(b => {
           b.classList.toggle('on', state.favs.has(id));

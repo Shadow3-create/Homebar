@@ -425,3 +425,79 @@ h2.sub, .section-title { font-size: 22px; margin: 34px 0 4px; display: flex; ali
 /* Ersatzbild, nur wenn ein Drink kein Foto hat */
 .ph { background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--dc, #e9a15b) 55%, var(--surface)), color-mix(in srgb, var(--dc, #e9a15b) 22%, var(--surface-2))); }
 .ph svg { width: 42%; height: 42%; stroke: color-mix(in srgb, var(--dc, #e9a15b) 60%, #000); stroke-width: 2.5; fill: color-mix(in srgb, var(--dc, #e9a15b) 35%, transparent); }
+
+/* ===== Icons (Lucide) ===== */
+.ic { width: 1.15em; height: 1.15em; vertical-align: -0.2em; flex: none; stroke-width: 2; }
+.tags button { display: inline-flex; align-items: center; gap: 6px; }
+.tags button .ic { width: 16px; height: 16px; color: var(--accent); }
+.tags button.on .ic { color: inherit; }
+.tags button[data-t="fav"] .ic { color: #e0435a; }
+.tags button.on[data-t="fav"] .ic { color: inherit; fill: currentColor; }
+.empty .big { display: flex; justify-content: center; gap: 10px; color: var(--accent); }
+.empty .big .ic { width: 44px; height: 44px; stroke-width: 1.6; }
+.need-ico { display: grid; place-items: center; color: var(--accent); }
+.need-ico .ic { width: 18px; height: 18px; }
+.season-emoji { width: 56px; height: 56px; border-radius: 18px; background: var(--surface); display: grid; place-items: center; color: var(--accent); box-shadow: var(--shadow); flex: none; }
+.season-emoji .ic { width: 28px; height: 28px; }
+.stars button .ic { width: 28px; height: 28px; stroke-width: 1.6; }
+.stars button.on .ic, .stars:hover button .ic { fill: currentColor; }
+.stars button:hover ~ button .ic { fill: none; }
+.noimg { display: grid; place-items: center; color: var(--muted); }
+.noimg .ic { width: 70%; height: 70%; }
+.btn .ic, .btn-mini .ic { width: 18px; height: 18px; vertical-align: -4px; }
+.detail-actions .btn, .made-row .btn, .shop-btn { display: inline-flex; align-items: center; gap: 8px; }
+.detail-actions .btn.fav-on .ic, .detail-actions [data-fav] .ic { color: #e0435a; }
+.af-hint .ic { vertical-align: -3px; }
+.logo-mark { width: 34px; height: 34px; border-radius: 11px; background: var(--accent); color: #fff; display: grid; place-items: center; }
+.logo-mark svg { width: 20px; height: 20px; stroke-width: 2.2; }
+.img-drop-text .ic { width: 30px; height: 30px; }
+.guest-inner .ic { vertical-align: -3px; }
+
+/* ===== Regal ===== */
+.bar-shelves { display: grid; gap: 18px; }
+.shelf {
+  --h: 176px;
+  --wood: #b98a5c; --wood-top: #d2a77a; --wood-edge: #8e6440; --wall: color-mix(in srgb, var(--surface-2) 70%, var(--bg));
+  background: var(--wall); border-radius: 20px; padding: 14px 14px 0; border: 1px solid var(--line);
+  box-shadow: inset 0 10px 24px rgba(60, 40, 20, .06);
+}
+:root[data-theme="dark"] .shelf { --wood: #6b4a30; --wood-top: #87613f; --wood-edge: #4a311f; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .shelf { --wood: #6b4a30; --wood-top: #87613f; --wood-edge: #4a311f; } }
+.shelf-title { font-family: Inter, sans-serif; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 4px 8px; display: flex; gap: 8px; align-items: center; }
+.shelf-title span { background: var(--surface); border-radius: 999px; padding: 0 8px; font-size: 11px; }
+.shelf-row {
+  display: flex; flex-wrap: wrap; column-gap: 4px; margin: 0 -14px; padding: 0 14px;
+  background:
+    repeating-linear-gradient(to bottom,
+      rgba(60,40,20,.10) 0, transparent 10px,
+      transparent calc(var(--h) - 18px),
+      var(--wood-top) calc(var(--h) - 18px), var(--wood-top) calc(var(--h) - 14px),
+      var(--wood) calc(var(--h) - 14px), var(--wood) calc(var(--h) - 4px),
+      var(--wood-edge) calc(var(--h) - 4px), var(--wood-edge) var(--h));
+  border-radius: 0 0 20px 20px;
+}
+.bottle { position: relative; width: 96px; height: var(--h); padding-bottom: 18px; display: flex; }
+.bottle-main { all: unset; cursor: pointer; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; padding: 6px 2px 0; border-radius: 12px; -webkit-tap-highlight-color: transparent; }
+.bottle-main:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.bottle-img { height: 104px; width: 100%; display: flex; align-items: flex-end; justify-content: center; transition: transform .25s cubic-bezier(.3,1.5,.5,1); }
+.bottle-img img { max-height: 104px; max-width: 84px; object-fit: contain; filter: drop-shadow(0 6px 4px rgba(40,25,10,.28)); }
+.bottle-svg { height: 92px; width: 40px; fill: color-mix(in srgb, var(--accent) 30%, var(--surface)); stroke: color-mix(in srgb, var(--accent) 70%, var(--text)); stroke-width: 2; }
+.bottle-svg rect { fill: var(--surface); }
+.bottle-main:hover .bottle-img { transform: translateY(-6px) rotate(-3deg); }
+.bottle-name { font-size: 12.5px; font-weight: 600; line-height: 1.2; text-align: center; max-width: 92px; height: 2.4em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; color: var(--text); }
+.bottle .low-tag { position: absolute; top: 4px; left: 2px; background: var(--warn); color: var(--bg); border-radius: 999px; padding: 1px 7px; font-size: 10px; white-space: nowrap; }
+.bottle.low .bottle-img { opacity: .55; }
+.bottle-x { position: absolute; top: 2px; right: 2px; width: 24px; height: 24px; border-radius: 50%; border: 0; background: var(--surface); color: var(--muted); display: grid; place-items: center; padding: 0; box-shadow: var(--shadow); opacity: 0; transition: opacity .15s; }
+.bottle-x svg { width: 13px; height: 13px; }
+.bottle:hover .bottle-x, .bottle:focus-within .bottle-x { opacity: 1; }
+@media (hover: none) { .bottle-x { opacity: .85; } }
+.bottle.drop .bottle-img { animation: drop .7s cubic-bezier(.3,1.4,.5,1); }
+@keyframes drop { 0% { transform: translateY(-70px) rotate(-10deg); opacity: 0; } 60% { transform: translateY(4px) rotate(2deg); opacity: 1; } 100% { transform: none; } }
+@media (max-width: 520px) {
+  .shelf { --h: 150px; padding: 12px 10px 0; }
+  .shelf-row { margin: 0 -10px; padding: 0 10px; column-gap: 0; }
+  .bottle { width: calc((100vw - 54px) / 4); }
+  .bottle-img { height: 84px; } .bottle-img img { max-height: 84px; max-width: 64px; }
+  .bottle-svg { height: 74px; }
+  .bottle-name { font-size: 11.5px; }
+}

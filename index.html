@@ -6,7 +6,7 @@
   <title>Home Bar – Was kann ich mixen?</title>
   <meta name="description" content="Gib ein, was du zuhause hast, und sieh alle Drinks, die du daraus mixen kannst.">
   <meta name="theme-color" content="#f7f4ef">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍸</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='24' fill='%23c2562b'/><path d='M22 26h56L50 56zM50 56v22M36 78h28' fill='none' stroke='white' stroke-width='7' stroke-linecap='round' stroke-linejoin='round'/></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -16,7 +16,7 @@
 <body>
   <header class="topbar">
     <div class="topbar-inner">
-      <a href="#mix" class="logo"><span class="logo-mark">🍸</span> <span data-i18n="appName">Home Bar</span></a>
+      <a href="#mix" class="logo"><span class="logo-mark"><svg viewBox="0 0 24 24"><path d="M5 5h14l-7 8zM12 13v6M8.5 19h7"/></svg></span> <span data-i18n="appName">Home Bar</span></a>
       <nav class="nav" id="nav">
         <a href="#mix" data-view="mix">
           <svg viewBox="0 0 24 24"><path d="M4 4h16l-8 9-8-9Zm8 9v7m-4 0h8"/></svg><span data-i18n="navMix">Mixen</span></a>
@@ -81,7 +81,7 @@
         </div>
       </div>
       <p class="hint" id="bar-hint" data-i18n="lowHint">Tipp: Tippe auf eine Zutat, um sie als „fast leer“ zu markieren. Sie kommt dann auf die Einkaufsliste.</p>
-      <div id="bar-chips" class="chips"></div>
+      <div id="bar-chips" class="bar-shelves"></div>
       <div id="buy-box"></div>
       <h2 class="sub" data-i18n="popular">Beliebte Zutaten</h2>
       <p class="hint" data-i18n="tapToAdd">Antippen zum Hinzufügen</p>
@@ -134,7 +134,7 @@
           <label class="img-drop" id="img-drop">
             <input type="file" accept="image/*" id="f-img-file" hidden>
             <img id="f-img-preview" alt="" hidden>
-            <span class="img-drop-text" id="img-drop-text">📷<br><span data-i18n="uploadImg">Bild hochladen</span><br><small data-i18n="optional">optional</small></span>
+            <span class="img-drop-text" id="img-drop-text"><svg class="ic" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg><br><span data-i18n="uploadImg">Bild hochladen</span><br><small data-i18n="optional">optional</small></span>
           </label>
           <div class="form-fields">
             <label class="field"><span data-i18n="fName">Name *</span><input id="f-name" required maxlength="80" data-i18n-ph="fNamePh"></label>
@@ -176,7 +176,7 @@
     <div id="reader" class="reader"></div>
     <div id="scan-result"></div>
     <div class="scan-alt">
-      <label class="btn ghost file-btn">📷 <span data-i18n="scanPhoto">Foto vom Barcode</span><input type="file" accept="image/*" id="scan-file" hidden></label>
+      <label class="btn ghost file-btn"><svg class="ic" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg> <span data-i18n="scanPhoto">Foto vom Barcode</span><input type="file" accept="image/*" id="scan-file" hidden></label>
       <div class="manual-code"><input id="scan-code" inputmode="numeric" data-i18n-ph="scanCodePh" placeholder="Nummer eintippen" maxlength="14"><button class="btn ghost" id="scan-code-go" data-i18n="search">Suchen</button></div>
     </div>
     <p class="fine" data-i18n="scanFine">Produktdaten von Open Food Facts (kostenlos). Nicht jede Flasche ist dort eingetragen.</p>
@@ -185,6 +185,7 @@
   <dialog id="share" class="sheet"></dialog>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
+  <script src="icons.js"></script>
   <script src="translations.js"></script>
   <script src="i18n.js"></script>
   <script src="app.js"></script>
